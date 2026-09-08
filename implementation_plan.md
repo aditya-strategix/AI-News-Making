@@ -8,8 +8,9 @@ To ensure the product is fit for the "current AI market era", the plan incorpora
 > **Added Functionalities for a Premium Experience:**
 > - **User Authentication & Profiles:** Allows multiple users ("all person use") to register, save their preferred sources, and set up their personal delivery details (Email & WhatsApp).
 > - **Customizable Summaries:** Users can choose the format (e.g., Bullet Points, Executive Brief, Tweet Thread) and tone of the summary.
+> - **Multi-Lingual Translation:** Summaries can be automatically translated and formatted into the user's preferred language (e.g., Spanish, Hindi).
 > - **Delivery Scheduling:** Users can choose *when* they want to receive their summaries (e.g., daily at 8 AM, weekly on Fridays).
-> - **Dashboard:** A beautiful web interface to view past summaries, manage active sources, and see delivery logs.
+> - **Dashboard & Interactive RAG Chat:** A beautiful web interface to view past summaries, manage active sources, and an interactive chat interface to ask questions directly to the accumulated news.
 
 ## User Review Required
 
@@ -44,7 +45,7 @@ We will create a new directory `frontend/` initialized with Next.js, React, and 
 We will convert the existing `ai-news-aggregator` skeleton into a fully functional FastAPI web server.
 
 #### [MODIFY] `e:\AI NEWS MAKING\ai-news-aggregator\pyproject.toml`
-- Add `fastapi`, `uvicorn`, `celery` (for robust background tasks), and `twilio` (for WhatsApp integrations).
+- Add `fastapi`, `uvicorn`, `celery` (for robust background tasks), `twilio` (for WhatsApp integrations), `langchain` / `langchain-openai` (for advanced GenAI workflows), and `chromadb` (for vector storage and RAG).
 
 #### [NEW] `e:\AI NEWS MAKING\ai-news-aggregator\app\main.py`
 - Initialize the FastAPI application, routing, and CORS middleware to communicate with the frontend.
@@ -53,10 +54,14 @@ We will convert the existing `ai-news-aggregator` skeleton into a fully function
 - Create REST API endpoints for user registration, saving user preferences, and manually triggering a scrape/summarize task.
 
 #### [NEW] `e:\AI NEWS MAKING\ai-news-aggregator\app\services\scraper.py`
-- Build the web scraping logic using `beautifulsoup4` (and potentially `playwright`) to extract content from user-selected URLs.
+- **Factory/Strategy Pattern for Scrapers:** We will implement a `BaseScraper` class with specific implementations for different sources (e.g., `YoutubeScraper` using `youtube-transcript-api`, `OpenAIScraper` for their blog structure). 
+- **Generic Fallback:** For websites without a predefined scraper, we will include a `GenericScraper` that uses a smart readability algorithm (via `beautifulsoup4`) to extract the main article text. This way, we handle complex sites perfectly while still supporting *any* URL a user throws at it.
 
 #### [NEW] `e:\AI NEWS MAKING\ai-news-aggregator\app\services\ai_summarizer.py`
-- Implement the AI logic using the `openai` or Gemini SDK to consume the scraped text and output formatted, tailored summaries.
+- **LangChain Integration:** Implement the GenAI logic using **LangChain** to build robust LLM pipelines. We will use LangChain's `MapReduceDocumentsChain` or `RefineDocumentsChain` for summarizing large articles that exceed standard token limits, and structured `PromptTemplates` to enforce specific output formats (e.g., bullet points, executive summaries) and **target languages** (Translation). This modern architectural pattern demonstrates strong, production-ready GenAI skills.
+
+#### [NEW] `e:\AI NEWS MAKING\ai-news-aggregator\app\services\rag_chat.py`
+- **Vector Database & RAG Pipeline:** We will index all scraped articles into a local **ChromaDB** vector store using OpenAI embeddings. This module will expose a conversational LangChain retrieval pipeline (RAG), allowing users to "chat with the news" directly from the web dashboard.
 
 #### [NEW] `e:\AI NEWS MAKING\ai-news-aggregator\app\services\notifications.py`
 - Implement the logic to format and send the finalized AI summary to the user's provided Email via SMTP and WhatsApp via Twilio.
